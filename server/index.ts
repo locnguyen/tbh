@@ -25,10 +25,22 @@ const typeDefs = gql`
         schoolId: ID
     }
 
-    enum QuestionType {
+    enum InputFieldType {
         RADIO
         CHECKBOX
+        TEXTAREA
         TEXT
+    }
+    
+    type InputFieldOption {
+        value: String
+    }
+
+    type InputFieldConfig {
+        type: InputFieldType!
+        name: String!
+        required: Boolean!
+        options: [InputFieldOption]!
     }
     
     type Session {
@@ -56,8 +68,12 @@ const typeDefs = gql`
         value: String!
     }
     
+    """
+    Saves the user's survey answers to our "database"
+    """
     input SubmitSessionSurveyInput {
         sessionId: ID!
+        email: String!
         answers: [AnswerInput]!
     }
     
@@ -69,10 +85,14 @@ const typeDefs = gql`
         questions: [Question]!
     }
 
+    """
+    Reusable questions that can be used at any school if it is associated
+    """
     type Question {
         id: ID!
+        schools: [School]!
         prompt: String!
-        type: QuestionType!
+        inputFieldConfig: InputFieldConfig!
     }
     
     type User {
@@ -91,13 +111,36 @@ const questions = [
     {
         id: '23897',
         prompt: 'How are you feeling after the session today?',
-        type: 'TEXT',
-        schoolIds: ['99']
+        schoolIds: ['99'],
+        inputFieldConfig: {
+            type: 'TEXTAREA',
+            name: 'afterSes',
+            options: [],
+        }
     }, {
         id: '49122',
         prompt: 'Are there any topics you would like covered next week?',
-        type: 'TEXT',
-        schoolIds: ['99']
+        schoolIds: ['99'],
+        inputFieldConfig: {
+            type: 'TEXTAREA',
+            name: 'newTopic',
+            options: [],
+        }
+    }, {
+        id: '29925',
+        prompt: 'Would you recommend this topic to someone else?',
+        schoolIds: ['99'],
+        inputFieldConfig: {
+            type: 'RADIO',
+            name: 'REC',
+            options: [{
+                value: 'Yes'
+            }, {
+                value: 'No'
+            }, {
+                value: 'Maybe'
+            }]
+        }
     }
 ]
 
@@ -151,6 +194,7 @@ const init = async (typeDefs: DocumentNode, resolvers: any) => {
 
     await server.start()
     server.applyMiddleware({app})
+    // Move hardcoded port number into envar in a .env file
     httpServer.listen({port: 9000}, () => console.log("Server started!"))
 }
 
